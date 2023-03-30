@@ -1,0 +1,16 @@
+{
+  "msg": {
+    "info": {
+      "license": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoidGVzdCIsImFsbG93ZWRfdXNlcnMiOjUsIm9iamVjdCI6InRlc3Qgb2JqZWN0IiwibW9kdWxlIjoidGVzdCBtb2R1bGUiLCJleHAiOjE2ODI3NTE2ODB9.JDXbTsROvpsicZBW35VN0CI1RTvqp7hb7tmHPqnnUeI",
+      "date": "",
+      "type": "test",
+      "expiration": "",
+      "allowed_users": "",
+      "days": "",
+      "object": "",
+      "module": ""
+    },
+    "status": "success",
+    "code": "200"
+  }
+}
