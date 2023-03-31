@@ -7,20 +7,24 @@ import (
 	"io/ioutil"
 	"license-tool/client/utils"
 	"os"
+	"regexp"
 )
 
-/*VerifyLicense 验证许可文件
+/* VerifyLicense 验证许可文件
  * @params: licenseName: 许可文件名
  * @return: true 表示许可文件有效，false 表示许可文件无效
  *			error: 验证失败，则返回一个错误对象；否则为 nil
  */
 func VerifyLicense(licenseName string) (bool, error) {
 
+	var jsonString string
+
 	// 打开许可文件
 	ciphertext, err := os.Open(licenseName)
 	if err != nil {
 		panic(err)
 	}
+
 	// 异常处理
 	defer func(ciphertext *os.File) {
 		err := ciphertext.Close()
@@ -34,10 +38,17 @@ func VerifyLicense(licenseName string) (bool, error) {
 		panic(err)
 	}
 
-	// 解密文件内容
-	plainText, err := utils.DeobfuscateUtil(string(licenseContent), utils.MachineCode())
+	outputBytes, err := utils.DeobfuscationUtil(string(licenseContent), utils.MachineCode())
 	if err != nil {
-		panic(err)
+		fmt.Println("Error deobfuscating data:", err)
+		return false, nil
+	} else {
+		re := regexp.MustCompile(`{(.*)}`)
+		jsonString = re.FindStringSubmatch(string(outputBytes))[0]
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("Deobfuscated bytes:", jsonString)
 	}
 
 	// 提取 signatureCode 值
@@ -45,7 +56,7 @@ func VerifyLicense(licenseName string) (bool, error) {
 		data map[string]interface{}
 	)
 
-	if err := json.Unmarshal(plainText, &data); err != nil {
+	if err := json.Unmarshal([]byte(jsonString), &data); err != nil {
 		return false, err
 	}
 

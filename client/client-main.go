@@ -7,5 +7,5 @@ import (
 
 func main() {
 
-	fmt.Println(service.VerifyLicense("3477628109429210.license"))
+	fmt.Println(service.VerifyLicense("3209497350222647.license"))
 }

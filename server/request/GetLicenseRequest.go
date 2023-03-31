@@ -124,7 +124,7 @@ func GetLicenseRequest(w http.ResponseWriter, r *http.Request) {
 	}(file)
 
 	// 对数据进行加密操作
-	encrypted, err := utils.ObfuscateUtil(response, signatureCode)
+	encrypted, err := utils.ObfuscationUtil(response, signatureCode)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
