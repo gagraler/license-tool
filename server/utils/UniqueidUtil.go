@@ -1,5 +1,3 @@
-// @author Zongsheng Xu 2023/3/30 21:13
-
 package utils
 
 import (

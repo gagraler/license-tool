@@ -1,5 +1,3 @@
-// Author: Zongsheng Xu 2023/3/30 21:34
-
 package utils
 
 import (
@@ -8,6 +6,7 @@ import (
 )
 
 func ObfuscateUtil(input []byte, signatureCode string) (string, error) {
+
 	if signatureCode == "" {
 		return "", errors.New("signature code is empty")
 	}
@@ -17,5 +16,6 @@ func ObfuscateUtil(input []byte, signatureCode string) (string, error) {
 	for i := 0; i < len(input); i++ {
 		ciphertext[i] = input[i] ^ scBytes[i%len(scBytes)]
 	}
+
 	return base64.URLEncoding.EncodeToString(ciphertext), nil
 }
