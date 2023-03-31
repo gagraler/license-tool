@@ -1,5 +1,3 @@
-// @author Zongsheng Xu 2023/3/30 22:20
-
 package utils
 
 import (
@@ -43,7 +41,7 @@ func getMacAddr() (string, error) {
 }
 
 /*
- * GenerateMachineCode 生成机器码
+ * MachineCode 生成机器码
  * @return: success 返回32位的机器码字符串
  *			failed  失败时会抛出panic异常
  * @params: null
