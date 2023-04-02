@@ -1,4 +1,4 @@
-module license-tool
+module server
 
 go 1.18
 
