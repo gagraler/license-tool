@@ -1,3 +1,3 @@
-module license-tool/client
+module client
 
 go 1.18

@@ -1,13 +1,13 @@
 package main
 
 import (
-	. "license-tool/server/router"
 	"net/http"
+	"server/router"
 )
 
 func main() {
 
-	r := SetupRouter()
+	r := router.SetupRouter()
 	if r == nil {
 		// 路由器配置失败，无法启动服务器
 		return

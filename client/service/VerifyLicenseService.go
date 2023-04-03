@@ -1,11 +1,11 @@
 package service
 
 import (
+	"client/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"license-tool/client/utils"
 	"os"
 	"regexp"
 )

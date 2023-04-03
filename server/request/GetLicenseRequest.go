@@ -10,11 +10,11 @@ package request
 import (
 	"encoding/json"
 	"fmt"
-	"license-tool/server/service"
-	"license-tool/server/utils"
 	"net/http"
 	"os"
 	"regexp"
+	"server/service"
+	"server/utils"
 	"strconv"
 	"time"
 )
