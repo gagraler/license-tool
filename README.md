@@ -17,6 +17,7 @@
 - [ ] The client verifies the `license file` time
 - [ ] The client verifies the remaining days of `license file` up to the current date
 - [ ] logging
+- [ ] The UTC time generated in `license` on the server side is converted to local time
 - [ ] The server verifies whether `license file` is valid
 - [ ] The server checks the `license permission` list
 - [ ] The server `license permission information` is stored in the database
