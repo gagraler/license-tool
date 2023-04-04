@@ -1,11 +1,14 @@
+/*
+ * package service 业务函数包，处理业务逻辑
+ */
 package service
 
 import (
-	"client/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"license-tool/client/utils"
 	"os"
 	"regexp"
 )
@@ -40,7 +43,7 @@ func VerifyLicense(licenseName string) (bool, error) {
 
 	outputBytes, err := utils.DeobfuscationUtil(string(licenseContent), utils.MachineCode())
 	if err != nil {
-		fmt.Println("Error deobfuscating data:", err)
+		fmt.Println("Error obfuscating data:", err)
 		return false, nil
 	} else {
 		re := regexp.MustCompile(`{(.*)}`)
@@ -48,7 +51,7 @@ func VerifyLicense(licenseName string) (bool, error) {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("Deobfuscated bytes:", jsonString)
+		fmt.Println("Obfuscating bytes:", jsonString)
 	}
 
 	// 提取 signatureCode 值

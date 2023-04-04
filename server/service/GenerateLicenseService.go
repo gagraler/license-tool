@@ -1,10 +1,6 @@
 /*
- * Package service 提供生成许可证的服务
- * Info - 包含授权详细信息
- * Msg - 包含Info对象、状态和代码
- * License - 包含许可证ID、发放日期、类型、过期日期、允许用户数量、有效天数、项目名称和模块名称
+ * package service 业务函数包，处理业务逻辑
  */
-
 package service
 
 import (
