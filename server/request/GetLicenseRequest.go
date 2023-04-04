@@ -124,6 +124,7 @@ func generateLicenseAndResponse(params *service.LicenseParams) (*ResponseData, e
 		return nil, err
 	}
 
+	// 构建返回的消息数据体
 	responseData := &ResponseData{
 		ID:         utils.GenerateUniqueID(),
 		Signature:  license.SignatureCode,
