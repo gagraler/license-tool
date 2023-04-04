@@ -1,15 +1,11 @@
 /*
- * GetLicenseRequest 处理获取许可证请求的HTTP处理程序
- * @params: w http.ResponseWriter - HTTP响应写入器
- *			r *http.Request - HTTP请求指针
- * @returns: null
+ * package request http请求处理层，处理http请求
  */
-
 package request
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -19,24 +15,24 @@ import (
 	"time"
 )
 
-// Authorized 授权详细信息
-type Authorized struct {
-	Id            string `json:"id"`
-	License       string `json:"license"`
-	Date          string `json:"date"`
-	SignatureCode string `json:"signatureCode"`
-	Type          string `json:"type"`
-	Expiration    string `json:"expiration"`
-	AllowedUsers  string `json:"usersNum"`
-	Project       string `json:"project"`
-	Module        string `json:"module"`
+// ResponseData 响应数据结构体
+type ResponseData struct {
+	ID           string `json:"id"`
+	License      string `json:"license"`
+	Date         string `json:"date"`
+	Signature    string `json:"signatureCode"`
+	Type         string `json:"type"`
+	Expiration   string `json:"expiration"`
+	AllowedUsers uint   `json:"usersNum,string"`
+	Project      string `json:"project"`
+	Module       string `json:"module"`
 }
 
-// Msg 授权信息、状态和代码
-type Msg struct {
-	Authorized Authorized `json:"authorized"`
-	Status     string     `json:"status"`
-	Code       int        `json:"code"`
+// ResponseMsg 响应信息结构体
+type ResponseMsg struct {
+	Status string       `json:"status"`
+	Data   ResponseData `json:"data"`
+	Code   int          `json:"code"`
 }
 
 /*
@@ -60,7 +56,6 @@ func GetLicenseRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid signature code format: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-
 	if !matched {
 		http.Error(w, "Invalid signature code format....", http.StatusBadRequest)
 		return
@@ -87,32 +82,18 @@ func GetLicenseRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 构建响应结构体
-	msg := Msg{
-		Authorized: Authorized{
-			Id:            utils.GenerateUniqueID(),
-			SignatureCode: license.SignatureCode,
-			License:       license.LicenseID,
-			Date:          license.Date.Format("2006-01-02 15:04:05"),
-			Type:          license.Type,
-			Expiration:    license.ExpirationDate.Format("2006-01-02"),
-			AllowedUsers:  strconv.FormatUint(uint64(license.AllowedUsers), 10),
-			Project:       license.Project,
-			Module:        license.Module,
-		},
-		Status: http.StatusText(200),
-		Code:   http.StatusOK,
-	}
+	msgData := buildResponseData(license)
 
 	// 将响应结构体转换为JSON格式
-	response, err := json.Marshal(msg)
+	response, err := json.Marshal(msgData)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// 以json数据的id字段作为文件名存储到文件中
-	licenseFileName := msg.Authorized.Id + ".license"
-	file, err := os.Create(licenseFileName)
+	// 创建一个以json数据的id字段作为文件名的文件
+	licenseFileName := msgData.ID + ".license"
+	file, err := createFile(licenseFileName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -137,9 +118,30 @@ func GetLicenseRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 设置响应头并将JSON格式的响应写入HTTP响应写入器中
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, _ = fmt.Fprint(w, string(response))
+	utils.RespondWithJSON(w, http.StatusOK, msgData)
+}
 
+// buildResponseData 构建响应结构体
+func buildResponseData(license *service.License) ResponseData {
+	return ResponseData{
+		ID:           utils.GenerateUniqueID(),
+		Signature:    license.SignatureCode,
+		License:      license.LicenseID,
+		Date:         license.Date.Format("2006-01-02 15:04:05"),
+		Type:         license.Type,
+		Expiration:   license.ExpirationDate.Format("2006-01-02"),
+		AllowedUsers: license.AllowedUsers,
+		Project:      license.Project,
+		Module:       license.Module,
+	}
+}
+
+// createFile 创建一个以json数据的id字段作为文件名的文件
+func createFile(fileName string) (*os.File, error) {
+	file, err := os.Create(fileName)
+	if err != nil {
+		log.Println("error creating file:", err)
+		return nil, err
+	}
+	return file, nil
 }
