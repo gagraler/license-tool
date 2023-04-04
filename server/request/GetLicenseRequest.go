@@ -101,7 +101,7 @@ func parseLicenseParams(queryParams url.Values) (*service.LicenseParams, error) 
 	// 判断 type 参数是否为有效值
 	// temporary - 临时
 	// permanent - 永久
-	if typeParam != "temporary" && typeParam != "permanent" {
+	if typeParam != "临时" && typeParam != "永久" {
 		return nil, fmt.Errorf("invalid license type: %s", typeParam)
 	}
 
@@ -118,7 +118,7 @@ func parseLicenseParams(queryParams url.Values) (*service.LicenseParams, error) 
 /*
  * generateLicenseAndResponse 生成许可证并封装响应信息
  * @params: params *service.LicenseParams - 许可证参数结构体指针
- * @returns: *ResponseData - 响应信息结构体指针
+ * @return: *ResponseData - 响应信息结构体指针
  *       	 error - 任何可能发生的错误
  */
 func generateLicenseAndResponse(params *service.LicenseParams) (*ResponseData, error) {
@@ -157,16 +157,16 @@ func generateLicenseAndResponse(params *service.LicenseParams) (*ResponseData, e
  * @params: license *ResponseData - 响应信息结构体指针
  * @returns: error - 任何可能发生的错误
  */
-func writeLicenseToFile(license *ResponseData) error {
+func writeLicenseToFile(responseData *ResponseData) error {
 
 	// 将许可证数据转化为JSON格式
-	response, err := json.Marshal(license)
+	response, err := json.Marshal(responseData)
 	if err != nil {
 		return err
 	}
 
 	// 根据许可证ID创建文件名
-	fileName := license.ID + ".license"
+	fileName := responseData.ID + ".license"
 	file, err := os.Create(fileName)
 	if err != nil {
 		log.Println("error creating file:", err)
@@ -180,7 +180,7 @@ func writeLicenseToFile(license *ResponseData) error {
 	}(file)
 
 	// 对许可证数据进行混淆处理
-	encrypted, err := utils.ObfuscationUtil(response, license.Signature)
+	encrypted, err := utils.ObfuscationUtil(response, responseData.Signature)
 	if err != nil {
 		return err
 	}
