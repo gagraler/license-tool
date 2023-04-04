@@ -5,27 +5,28 @@ package request
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"server/service"
 	"server/utils"
-	"strconv"
 	"time"
 )
 
 // ResponseData 响应数据结构体
 type ResponseData struct {
-	ID           string `json:"id"`
-	License      string `json:"license"`
-	Date         string `json:"date"`
-	Signature    string `json:"signatureCode"`
-	Type         string `json:"type"`
-	Expiration   string `json:"expiration"`
-	AllowedUsers uint   `json:"usersNum,string"`
-	Project      string `json:"project"`
-	Module       string `json:"module"`
+	ID         string `json:"id"`            // 许可证唯一ID
+	License    string `json:"license"`       // 许可证字符串
+	Date       string `json:"date"`          // 许可证生成日期UTC
+	Signature  string `json:"signatureCode"` // 被授权系统所在机器特征码
+	Object     string `json:"object"`        // 许可对象
+	Type       string `json:"type"`          // 许可类型
+	Expiration string `json:"expiration"`    // 到期时间
+	Project    string `json:"project"`       // 许可项目
+	Module     string `json:"module"`        // 许可模块
 }
 
 // ResponseMsg 响应信息结构体
@@ -36,112 +37,147 @@ type ResponseMsg struct {
 }
 
 /*
- * GetLicenseRequest 处理获取许可证请求的HTTP处理程序
- * @params:  w http.ResponseWriter - HTTP响应写入器
- * 			 r *http.Request - HTTP请求指针
+ * GetLicenseRequest 处理获取许可证请求
+ * @params: w http.ResponseWriter - 用于返回http响应的对象
+ * 			r *http.Request - 包含http请求信息的指针
  * @returns: null
  */
 func GetLicenseRequest(w http.ResponseWriter, r *http.Request) {
+	// 从查询参数中解析出许可证所需参数
+	params, err := parseLicenseParams(r.URL.Query())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-	licenseType := r.URL.Query().Get("type")
-	expirationString := r.URL.Query().Get("expiration")
-	usersNumberString := r.URL.Query().Get("usersNum")
-	obj := r.URL.Query().Get("object")
-	module := r.URL.Query().Get("module")
+	// 根据许可证所需参数生成许可证并封装响应信息
+	license, err := generateLicenseAndResponse(params)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	// 校验 signatureCode 是否为 32 位纯数字
-	signatureCode := r.URL.Query().Get("signatureCode")
+	// 将生成的许可证写入到文件中
+	err = writeLicenseToFile(license)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// 将响应信息返回给客户端
+	utils.RespondWithJSON(w, http.StatusOK, license)
+}
+
+/*
+ * parseLicenseParams 从http请求的URL中解析并校验获取许可证所需要的参数
+ * @params: queryParams url.Values - 包含http请求中查询参数的对象
+ * @returns: *service.LicenseParams - 许可证参数结构体指针
+ * 			 error - 任何可能发生的错误
+ */
+func parseLicenseParams(queryParams url.Values) (*service.LicenseParams, error) {
+
+	// 对获取的特征码进行格式检查
+	signatureCode := queryParams.Get("signatureCode")
 	matched, err := regexp.MatchString(`^.{1,32}$`, signatureCode)
 	if err != nil {
-		http.Error(w, "Invalid signature code format: "+err.Error(), http.StatusBadRequest)
-		return
+		return nil, err
 	}
 	if !matched {
-		http.Error(w, "Invalid signature code format....", http.StatusBadRequest)
-		return
+		return nil, fmt.Errorf("invalid signature code format")
 	}
 
-	// 校验输入参数并检查是否正确
+	// 将获取的过期时间字符串转换为时间对象
+	expirationString := queryParams.Get("expiration")
 	expiration, err := time.Parse("2006-01-02", expirationString)
 	if err != nil {
-		http.Error(w, "Invalid expiration date format: "+err.Error(), http.StatusBadRequest)
-		return
+		return nil, err
 	}
 
-	usersNumber, err := strconv.ParseUint(usersNumberString, 10, 32)
+	return &service.LicenseParams{
+		SignatureCode: signatureCode,
+		Object:        queryParams.Get("object"),
+		Type:          queryParams.Get("type"),
+		Expiration:    expiration,
+		Project:       queryParams.Get("project"),
+		Module:        queryParams.Get("module"),
+	}, nil
+}
+
+/*
+ * generateLicenseAndResponse 生成许可证并封装响应信息
+ * @params: params *service.LicenseParams - 许可证参数结构体指针
+ * @returns: *ResponseData - 响应信息结构体指针
+ *       	 error - 任何可能发生的错误
+ */
+func generateLicenseAndResponse(params *service.LicenseParams) (*ResponseData, error) {
+
+	// 生成许可证
+	license, err := service.GenerateLicense(
+		params.SignatureCode,
+		params.Type,
+		params.Expiration,
+		params.Object,
+		params.Project,
+		params.Module,
+	)
 	if err != nil {
-		http.Error(w, "Invalid allowed users value: "+err.Error(), http.StatusBadRequest)
-		return
+		return nil, err
 	}
 
-	// 使用输入参数调用GenerateLicense函数生成许可证
-	license, err := service.GenerateLicense(signatureCode, licenseType, expiration, uint(usersNumber), obj, module)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	responseData := &ResponseData{
+		ID:         utils.GenerateUniqueID(),
+		Signature:  license.SignatureCode,
+		License:    license.LicenseID,
+		Date:       license.Date.Format("2006-01-02 15:04:05 UTC"),
+		Type:       license.Type,
+		Expiration: license.Expiration.Format("2006-01-02"),
+		Object:     license.Object,
+		Project:    license.Project,
+		Module:     license.Module,
 	}
 
-	// 构建响应结构体
-	msgData := buildResponseData(license)
+	return responseData, nil
+}
 
-	// 将响应结构体转换为JSON格式
-	response, err := json.Marshal(msgData)
+/*
+ * writeLicenseToFile 将生成的许可证写入到文件中
+ * @params: license *ResponseData - 响应信息结构体指针
+ * @returns: error - 任何可能发生的错误
+ */
+func writeLicenseToFile(license *ResponseData) error {
+
+	// 将许可证数据转化为JSON格式
+	response, err := json.Marshal(license)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return err
 	}
 
-	// 创建一个以json数据的id字段作为文件名的文件
-	licenseFileName := msgData.ID + ".license"
-	file, err := createFile(licenseFileName)
+	// 根据许可证ID创建文件名
+	fileName := license.ID + ".license"
+	file, err := os.Create(fileName)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		log.Println("error creating file:", err)
+		return err
 	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
+			log.Println("error closing file: ", err)
 		}
 	}(file)
 
-	// 对数据进行加密操作
-	encrypted, err := utils.ObfuscationUtil(response, signatureCode)
+	// 对许可证数据进行混淆处理
+	encrypted, err := utils.ObfuscationUtil(response, license.Signature)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return err
 	}
 
-	// 将加密后的数据写入文件
+	// 将混淆后的许可证数据写入文件
 	_, err = file.WriteString(encrypted)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		log.Println("error writing to file:", err)
+		return err
 	}
 
-	utils.RespondWithJSON(w, http.StatusOK, msgData)
-}
-
-// buildResponseData 构建响应结构体
-func buildResponseData(license *service.License) ResponseData {
-	return ResponseData{
-		ID:           utils.GenerateUniqueID(),
-		Signature:    license.SignatureCode,
-		License:      license.LicenseID,
-		Date:         license.Date.Format("2006-01-02 15:04:05"),
-		Type:         license.Type,
-		Expiration:   license.ExpirationDate.Format("2006-01-02"),
-		AllowedUsers: license.AllowedUsers,
-		Project:      license.Project,
-		Module:       license.Module,
-	}
-}
-
-// createFile 创建一个以json数据的id字段作为文件名的文件
-func createFile(fileName string) (*os.File, error) {
-	file, err := os.Create(fileName)
-	if err != nil {
-		log.Println("error creating file:", err)
-		return nil, err
-	}
-	return file, nil
+	return nil
 }

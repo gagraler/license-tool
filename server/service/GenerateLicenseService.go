@@ -15,7 +15,7 @@ type Info struct {
 	Date          string `json:"date"`
 	Type          string `json:"type"`
 	Expiration    string `json:"expiration"`
-	AllowedUsers  string `json:"usersNum"`
+	Object        string `json:"object"`
 	Project       string `json:"project"`
 	Module        string `json:"module"`
 }
@@ -26,16 +26,16 @@ type Msg struct {
 	Code   int    `json:"code"`
 }
 
-type License struct {
-	ID             string
-	LicenseID      string
-	Date           time.Time
-	SignatureCode  string
-	Type           string
-	ExpirationDate time.Time
-	AllowedUsers   uint
-	Project        string
-	Module         string
+type LicenseParams struct {
+	ID            string
+	LicenseID     string
+	Date          time.Time
+	SignatureCode string
+	Type          string
+	Object        string
+	Expiration    time.Time
+	Project       string
+	Module        string
 }
 
 /*
@@ -44,14 +44,14 @@ type License struct {
  * @params: licenseType string - 许可证类型
  *			signatureCode string - 机器特征码
  * 			expiration time.Time - 过期日期
- *			allowedUsers uint - 允许的用户数量
+ *			Object uint - 允许的用户数量
  * 			days uint - 许可证有效天数
  *			obj string - 项目名称
  *			module string - 模块名称
  * @returns:License - 指向生成的license对象的指针
  * 			error - 任何可能发生的错误
  */
-func GenerateLicense(signatureCode string, licenseType string, expiration time.Time, allowedUsers uint, obj string, module string) (*License, error) {
+func GenerateLicense(signatureCode string, licenseType string, expiration time.Time, object string, project string, module string) (*LicenseParams, error) {
 
 	// 生成随机、唯一的license
 	rand.Seed(time.Now().UnixNano())
@@ -65,24 +65,18 @@ func GenerateLicense(signatureCode string, licenseType string, expiration time.T
 	}
 	licenseID := string(b)
 
-	license := &License{
-		LicenseID:      licenseID,
-		Date:           time.Now().UTC(),
-		SignatureCode:  signatureCode,
-		Type:           licenseType,
-		ExpirationDate: expiration,
-		AllowedUsers:   allowedUsers,
-		Project:        obj,
-		Module:         module,
+	license := &LicenseParams{
+		LicenseID:     licenseID,
+		Date:          time.Now().UTC(),
+		SignatureCode: signatureCode,
+		Object:        object,
+		Type:          licenseType,
+		Expiration:    expiration,
+		Project:       project,
+		Module:        module,
 	}
 
 	// 这里可以添加保存到数据库或文件等持久化操作
-	// ...
-	//err := ioutil.WriteFile("license.txt", []byte(license.LicenseID), 0644)
-	//if err != nil {
-	//	// 处理错误
-	//	fmt.Println("Error:", err)
-	//	return nil, nil
-	//}
+
 	return license, nil
 }
