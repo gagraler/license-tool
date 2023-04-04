@@ -93,10 +93,20 @@ func parseLicenseParams(queryParams url.Values) (*service.LicenseParams, error) 
 		return nil, err
 	}
 
+	// 判断 type 参数是否为空
+	typeParam := queryParams.Get("type")
+	if typeParam == "" {
+		return nil, fmt.Errorf("type parameter cannot be empty")
+	}
+	// 判断 type 参数是否为有效值
+	if typeParam != "temporary" && typeParam != "permanent" {
+		return nil, fmt.Errorf("invalid license type: %s", typeParam)
+	}
+
 	return &service.LicenseParams{
 		SignatureCode: signatureCode,
 		Object:        queryParams.Get("object"),
-		Type:          queryParams.Get("type"),
+		Type:          typeParam,
 		Expiration:    expiration,
 		Project:       queryParams.Get("project"),
 		Module:        queryParams.Get("module"),
