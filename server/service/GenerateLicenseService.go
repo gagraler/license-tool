@@ -52,7 +52,7 @@ func GenerateLicenseService(params *dao.License) (*dao.License, error) {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 
-	if err := dao.SaveLicenseToDatabase(license); err != nil {
+	if err := dao.AddLicenseToDatabase(license); err != nil {
 		return nil, err
 	}
 

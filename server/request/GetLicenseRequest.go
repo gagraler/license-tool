@@ -114,14 +114,15 @@ func generateLicenseAndResponse(params *dao.License) (*dao.License, error) {
 	}
 
 	// 将许可证的日期和过期日期格式化为指定的格式
-	dateStr := license.CreatedAt.Format("2006-01-02 15:04:05 UTC")
+	dateStr := license.CreatedAt.Format("2006-01-02 15:04:05")
 	expirationStr := license.Expiration.Format("2006-01-02")
 
 	// 解析日期和过期日期
-	date, err := time.Parse("2006-01-02 15:04:05 UTC", dateStr)
+	createDate, err := time.Parse("2006-01-02 15:04:05", dateStr)
 	if err != nil {
 		return nil, err
 	}
+
 	expiration, err := time.Parse("2006-01-02", expirationStr)
 	if err != nil {
 		return nil, err
@@ -132,7 +133,7 @@ func generateLicenseAndResponse(params *dao.License) (*dao.License, error) {
 		ID:         license.ID,
 		Signature:  license.Signature,
 		License:    license.License,
-		CreatedAt:  date,
+		CreatedAt:  createDate,
 		Type:       license.Type,
 		Expiration: expiration,
 		Object:     license.Object,

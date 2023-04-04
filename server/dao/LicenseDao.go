@@ -27,7 +27,7 @@ type License struct {
  * @params: license *License - 许可证结构体指针
  * @returns: error - 任何可能发生的错误
  */
-func SaveLicenseToDatabase(license *License) error {
+func AddLicenseToDatabase(license *License) error {
 
 	db, _ := mysql.ConnectionMySQL()
 
