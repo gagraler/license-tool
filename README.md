@@ -20,7 +20,7 @@
 - [ ] The UTC time generated in `license` on the server side is converted to local time
 - [ ] The server verifies whether `license file` is valid
 - [ ] The server checks the `license permission` list
-- [ ] The server `license permission information` is stored in the database
+- [x] The server `license permission information` is stored in the database
 - [ ] The client package is so and dll
 - [ ] Request API doc
 - [ ] Client Function API doc

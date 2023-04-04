@@ -18,7 +18,7 @@
  - [ ] 服务端`license`中生成的UTC时间转换为本地时间
  - [ ] 服务端校验`license文件`是否有效
  - [ ] 服务端查看`license许可`list
- - [ ] 服务端`license许可信息`存储至数据库
+ - [x] 服务端`license许可信息`存储至数据库
  - [ ] 客户端封装为so和dll
  - [ ] Request API doc
  - [ ] 客户端Function API doc
