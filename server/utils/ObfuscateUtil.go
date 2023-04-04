@@ -13,21 +13,21 @@ import (
 /*
  * ObfuscationUtil 是一个字节数组混淆工具函数，用于将输入的字节数组与签名代码进行异或运算并进行加密
  * @params: input []byte - 需要加密的字节数组
- * 			signatureCode string - 签名代码
+ * 			signature string - 签名代码
  * @returns: string - 加密后的字符串
  * 			 error - 如果签名代码为空，则返回一个错误
  */
-func ObfuscationUtil(input []byte, signatureCode string) (string, error) {
+func ObfuscationUtil(input []byte, signature string) (string, error) {
 
 	// targetLen 目标字符常量 - 4096
 	const targetLen = 4096
 
 	// 判断特征码是否为空
-	if signatureCode == "" {
+	if signature == "" {
 		return "", errors.New("signature code is empty")
 	}
 
-	scBytes := []byte(signatureCode)
+	scBytes := []byte(signature)
 	ciphertext := make([]byte, targetLen)
 	for i := 0; i < targetLen; i++ {
 		if i < len(input) {

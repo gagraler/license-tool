@@ -2,10 +2,13 @@ package main
 
 import (
 	"net/http"
+	"server/config"
 	"server/router"
 )
 
 func main() {
+
+	port := config.GetConfig("server", "port")
 
 	r := router.SetupRouter()
 	if r == nil {
@@ -14,7 +17,7 @@ func main() {
 	}
 
 	// 启动服务器
-	if err := http.ListenAndServe(":8080", r); err != nil {
+	if err := http.ListenAndServe(":"+port, r); err != nil {
 		panic(err)
 	}
 }

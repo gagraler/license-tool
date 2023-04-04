@@ -9,33 +9,26 @@ import (
 	"time"
 )
 
-const (
-	// 字符集为数字0-9
-	charset = "0123456789"
-	// ID长度为16位
-	idLength = 16
-)
-
 var (
 	// 使用时间戳作为随机数生成器的源种子
 	seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 	// 互斥锁，用于多个goroutine之间同步访问usedIDs变量
 	mu sync.Mutex
 	// 存储已经使用过的ID
-	usedIDs = make(map[string]bool)
+	usedIDs = make(map[int]bool)
 )
 
 // 生成一个随机字符串作为ID
-func generateID() string {
-	id := make([]byte, idLength)
-	for i := range id {
-		id[i] = charset[seededRand.Intn(len(charset))]
-	}
-	return string(id)
+func generateID() int {
+
+	min := int(1e15)
+	max := int(1e16 - 1)
+	return min + seededRand.Intn(max-min+1)
+
 }
 
 // 生成唯一的ID
-func GenerateUniqueID() string {
+func GenerateUniqueID() int {
 	mu.Lock()
 	defer mu.Unlock()
 
