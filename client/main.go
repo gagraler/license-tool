@@ -1,8 +1,8 @@
 package main
 
 import (
+	"client/service"
 	"fmt"
-	"license-tool/client/service"
 )
 
 func main() {
