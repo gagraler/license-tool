@@ -101,6 +101,7 @@ func parseLicenseParams(queryParams url.Values) (*service.LicenseParams, error) 
 	// 判断 type 参数是否为有效值
 	// temporary - 临时
 	// permanent - 永久
+	// TODO 由前端来返回值 后端不做具体值
 	if typeParam != "临时" && typeParam != "永久" {
 		return nil, fmt.Errorf("invalid license type: %s", typeParam)
 	}
