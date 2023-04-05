@@ -4,6 +4,8 @@
 package request
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -16,6 +18,9 @@ import (
 	"server/utils"
 	"strconv"
 	"time"
+
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
 /*
@@ -46,6 +51,12 @@ func GetLicenseRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	//err = writeLicenseToMinio(license, license-file)
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
 
 	// 将响应信息返回给客户端
 	utils.RespondWithJSON(w, http.StatusOK, license)
@@ -118,6 +129,7 @@ func generateLicenseAndResponse(params *dao.License) (*dao.License, error) {
 	expirationStr := license.Expiration.Format("2006-01-02")
 
 	// 解析日期和过期日期
+	// TODO UTC时间转为所在时区时间
 	createDate, err := time.Parse("2006-01-02 15:04:05", dateStr)
 	if err != nil {
 		return nil, err
@@ -133,12 +145,13 @@ func generateLicenseAndResponse(params *dao.License) (*dao.License, error) {
 		ID:         license.ID,
 		Signature:  license.Signature,
 		License:    license.License,
-		CreatedAt:  createDate,
 		Type:       license.Type,
 		Expiration: expiration,
 		Object:     license.Object,
 		Project:    license.Project,
 		Module:     license.Module,
+		CreatedAt:  createDate,
+		UpdatedAt:  createDate,
 	}
 
 	return responseData, nil
@@ -182,6 +195,55 @@ func writeLicenseToFile(licenseData *dao.License) error {
 	_, err = file.WriteString(encrypted)
 	if err != nil {
 		log.Println("error writing to file:", err)
+		return err
+	}
+
+	return nil
+}
+
+/*
+ * writeLicenseToMinio 将生成的许可证写入到minio中
+ * @params: license *dao.License - 许可证结构体指针
+ * 		   bucketName string - 存储桶名称
+ * @returns: error - 任何可能发生的错误
+ */
+func writeLicenseToMinio(license *dao.License, bucketName string) error {
+
+	// 将许可证数据转化为JSON格式
+	licenseJSON, err := json.Marshal(license)
+	if err != nil {
+		return err
+	}
+
+	// 获取minio的连接信息
+	minioEndpoint := os.Getenv("MINIO_ENDPOINT")
+	minioAccessKey := os.Getenv("1kXtZ2OvK65Frrw2")
+	minioSecretKey := os.Getenv("6UyZ6gusbAO2PiPGb3ZN4dBKI2LcNm3G")
+
+	// 初始化minio客户端
+	minioClient, err := minio.New(minioEndpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(minioAccessKey, minioSecretKey, ""),
+		Secure: false,
+	})
+	if err != nil {
+		return err
+	}
+
+	// 检查存储桶是否存在，如果不存在则创建
+	err = minioClient.MakeBucket(context.Background(), bucketName, minio.MakeBucketOptions{})
+	if err != nil {
+		exists, errBucketExists := minioClient.BucketExists(context.Background(), bucketName)
+		if errBucketExists == nil && exists {
+			log.Printf("Bucket %s already exists\n", bucketName)
+		} else {
+			return err
+		}
+	}
+
+	// 将许可证写入到minio中
+	objectName := fmt.Sprintf("%s/%d.json", license.Project, license.ID)
+	_, err = minioClient.PutObject(context.Background(), bucketName, objectName, bytes.NewReader(licenseJSON), int64(len(licenseJSON)), minio.PutObjectOptions{})
+	if err != nil {
 		return err
 	}
 

@@ -37,13 +37,13 @@ func GenerateLicenseService(params *dao.License) (*dao.License, error) {
 	license := &dao.License{
 		ID:         utils.GenerateUniqueID(),
 		License:    licenseStr,
-		CreatedAt:  time.Now().UTC(),
 		Signature:  params.Signature,
 		Object:     params.Object,
 		Type:       params.Type,
 		Expiration: params.Expiration,
 		Project:    params.Project,
 		Module:     params.Module,
+		CreatedAt:  time.Now().UTC(),
 	}
 
 	// 保存到数据库
