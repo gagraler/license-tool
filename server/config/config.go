@@ -7,7 +7,7 @@ import (
 
 var cfg *ini.File
 
-func init() {
+func InitConfig() {
 
 	var err error
 

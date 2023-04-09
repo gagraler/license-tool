@@ -6,6 +6,11 @@ import (
 	"server/router"
 )
 
+func init() {
+	// log.InitLogger("./logs/log.txt", "INFO")
+
+}
+
 func main() {
 
 	port := config.GetConfig("server", "port")
@@ -20,4 +25,5 @@ func main() {
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		panic(err)
 	}
+
 }
