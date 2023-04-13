@@ -197,13 +197,12 @@ func generateLicenseAndResponse(params *dao.License) (*dao.License, error) {
 func writeLicenseToFile(licenseData *dao.License) ([]byte, error) {
 
 	// 将许可证数据转化为JSON格式
-	// TODO 撤掉这层序列化
 	licenseJSON, err := json.Marshal(licenseData)
 	if err != nil {
 		return nil, err
 	}
 
-	// 根据许可证ID创建文件名
+	// 根据许可证id创建文件名
 	fileName := strconv.Itoa(licenseData.ID) + ".license"
 	file, err := os.Create(fileName)
 	if err != nil {

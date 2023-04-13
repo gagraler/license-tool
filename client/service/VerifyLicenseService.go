@@ -82,7 +82,7 @@ func ExtractSignatureCode(jsonString string) (string, error) {
 		return "", err
 	}
 
-	signatureCode, ok := data["signatureCode"].(string)
+	signatureCode, ok := data["signature"].(string)
 	if !ok {
 		return "", errors.New("failed to extract signatureCode from license")
 	}
