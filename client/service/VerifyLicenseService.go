@@ -95,9 +95,9 @@ func ExtractSignatureCode(jsonString string) (string, error) {
  * @return: true 表示许可文件有效，false 表示许可文件无效
  *			error: 验证失败，则返回一个错误对象；否则为 nil
  */
-func VerifyLicense(licenseName string) (bool, error) {
+func VerifyLicense(licenseFile string) (bool, error) {
 	// 读取许可文件内容
-	licenseContent, err := ReadLicenseFile(licenseName)
+	licenseContent, err := ReadLicenseFile(licenseFile)
 	if err != nil {
 		return false, err
 	}
