@@ -13,9 +13,10 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"server/common"
 	"server/dao"
 	"server/service"
-	"server/utils"
+	"server/util"
 	"strconv"
 	"time"
 
@@ -31,24 +32,42 @@ import (
  */
 func GetLicenseRequest(w http.ResponseWriter, r *http.Request) {
 
+	// 根据请求body创建一个json解析器实例
+	decoder := json.NewDecoder(r.Body)
+
+	// 用于存放参数key=value数据
+	var paramsss map[string]string
+
+	// 解析参数 存入map
+	decoder.Decode(&paramsss)
+
+	fmt.Printf("POST json: signature=%s, object=%s\n", paramsss["signature"], paramsss["object"])
+
 	// 从http请求参数中解析出许可证所需参数
-	params, err := parseLicenseParams(r.URL.Query())
+	//err := r.ParseForm()
+	//if err != nil {
+	//	common.RespondWithError(w, http.StatusInternalServerError, "Request parameter parsing error")
+	//	return
+	//}
+
+	params, err := parseLicenseParams(r.Form)
+	fmt.Println("params: ", params)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		common.RespondWithError(w, http.StatusInternalServerError, "Request parameter parsing error")
 		return
 	}
 
 	// 根据许可证所需参数license字段值并封装响应信息
 	license, err := generateLicenseAndResponse(params)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		common.RespondWithError(w, http.StatusInternalServerError, "Request parameter parsing error")
 		return
 	}
 
 	// 将生成的许可证写入到文件中
 	err = writeLicenseToFile(license)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		common.RespondWithError(w, http.StatusInternalServerError, "File write error")
 		return
 	}
 
@@ -59,7 +78,7 @@ func GetLicenseRequest(w http.ResponseWriter, r *http.Request) {
 	//}
 
 	// 将响应信息返回给客户端
-	utils.RespondWithJSON(w, http.StatusOK, license)
+	common.RespondWithProper(w, http.StatusOK, license)
 }
 
 /*
@@ -186,7 +205,7 @@ func writeLicenseToFile(licenseData *dao.License) error {
 	}(file)
 
 	// 对许可证数据进行混淆处理
-	encrypted, err := utils.ObfuscationUtil(licenseJSON, licenseData.Signature)
+	encrypted, err := util.GarbleUtils(licenseJSON, licenseData.Signature)
 	if err != nil {
 		return err
 	}

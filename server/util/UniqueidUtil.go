@@ -1,7 +1,7 @@
 /*
- * package utils 工具包，提供了一些常用的工具函数
+ * package util 工具包，提供了一些常用的工具函数
  */
-package utils
+package util
 
 import (
 	"math/rand"

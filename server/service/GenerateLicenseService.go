@@ -8,7 +8,7 @@ import (
 	"math/rand"
 	"server/dao"
 	"server/pkg/mysql"
-	"server/utils"
+	"server/util"
 	"time"
 )
 
@@ -35,7 +35,7 @@ func GenerateLicenseService(params *dao.License) (*dao.License, error) {
 
 	// 构建license消息体
 	license := &dao.License{
-		ID:         utils.GenerateUniqueID(),
+		ID:         util.GenerateUniqueID(),
 		License:    licenseStr,
 		Signature:  params.Signature,
 		Object:     params.Object,
