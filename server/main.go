@@ -8,6 +8,7 @@ import (
 
 func init() {
 	// log.InitLogger("./logs/log.txt", "INFO")
+	config.InitConfig()
 
 }
 

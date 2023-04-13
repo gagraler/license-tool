@@ -1,5 +1,5 @@
 /*
- * package utils 工具包，提供了一些常用的工具函数
+ * package util 工具包，提供了一些常用的工具函数
  */
 package utils
 
@@ -10,10 +10,10 @@ import (
 
 /*
  * DeobfuscationUtil 字节数组反混淆工具函数，用于将输入的字节数组与特征码进行异或运算并进行反加混淆
- * @param: input []byte - 需要加密的字节数组
- *		   signatureCode string - 签名代码
+ * @param: obfuscatedStr string - 需要反混淆的字符串值
+ *		   signatureCode string - 客户端特征码
  * @return: string - 加密后的字符串
- * 		 	error - 如果签名代码为空，则返回一个错误
+ * 		 	error  - 如果签名代码为空，则返回一个错误
  */
 func DeobfuscationUtil(obfuscatedStr string, signatureCode string) ([]byte, error) {
 
