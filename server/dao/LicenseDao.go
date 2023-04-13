@@ -9,16 +9,16 @@ import (
 )
 
 type License struct {
-	ID         int       `gorm:"column:id;primary_key"`
-	License    string    `gorm:"column:license"`
-	Signature  string    `gorm:"column:signature"`
-	Type       string    `gorm:"column:type"`
-	Object     string    `gorm:"column:object"`
-	Expiration time.Time `gorm:"column:expiration"`
-	Project    string    `gorm:"column:project"`
-	Module     string    `gorm:"column:module"`
-	CreatedAt  time.Time `gorm:"column:created_time"`
-	UpdatedAt  time.Time `gorm:"column:updated_time"`
+	ID          int       `gorm:"column:id;primary_key" json:"id"`
+	License     string    `gorm:"column:license" json:"license"`
+	Signature   string    `gorm:"column:signature" json:"signature"`
+	Type        string    `gorm:"column:type" json:"type"`
+	Object      string    `gorm:"column:object" json:"object"`
+	Expiration  time.Time `gorm:"column:expiration" json:"expiration"`
+	Project     string    `gorm:"column:project" json:"project"`
+	Module      string    `gorm:"column:module" json:"module"`
+	CreatedTime time.Time `gorm:"column:created_time" json:"created_time"`
+	UpdatedTime time.Time `gorm:"column:updated_time" json:"updated_time"`
 }
 
 /*

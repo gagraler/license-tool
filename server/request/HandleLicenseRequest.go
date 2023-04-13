@@ -8,9 +8,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"regexp"
 	"server/common"
@@ -25,49 +25,59 @@ import (
 )
 
 /*
- * GetLicenseRequest 处理获取许可证请求
+ * HandleLicenseRequest 处理获取许可证请求
  * @params: w http.ResponseWriter - 用于返回http响应的对象
  * 			r *http.Request - 包含http请求信息的指针
  * @returns: null
  */
-func GetLicenseRequest(w http.ResponseWriter, r *http.Request) {
+func HandleLicenseRequest(w http.ResponseWriter, r *http.Request) {
 
 	// 根据请求body创建一个json解析器实例
 	decoder := json.NewDecoder(r.Body)
 
 	// 用于存放参数key=value数据
-	var paramsss map[string]string
+	var (
+		params map[string]string
+	)
 
 	// 解析参数 存入map
-	decoder.Decode(&paramsss)
-
-	fmt.Printf("POST json: signature=%s, object=%s\n", paramsss["signature"], paramsss["object"])
+	err := decoder.Decode(&params)
+	if err != nil {
+		return
+	}
 
 	// 从http请求参数中解析出许可证所需参数
-	//err := r.ParseForm()
+	//err = r.ParseForm()
 	//if err != nil {
-	//	common.RespondWithError(w, http.StatusInternalServerError, "Request parameter parsing error")
+	//	common.RespondWithError(w, http.StatusInternalServerError, "Failed to parse request parameters: "+err.Error())
 	//	return
 	//}
 
-	params, err := parseLicenseParams(r.Form)
-	fmt.Println("params: ", params)
+	// 获取POST请求中的参数并存入map
+	for key, values := range r.Form {
+		if len(values) > 0 {
+			params[key] = values[0]
+		}
+	}
+
+	// 从http请求参数中解析出许可证所需参数
+	licenseData, err := parseLicenseParams(params, w)
 	if err != nil {
-		common.RespondWithError(w, http.StatusInternalServerError, "Request parameter parsing error")
+		common.RespondWithError(w, http.StatusBadRequest, "Failed to parse license parameters: "+err.Error())
 		return
 	}
 
 	// 根据许可证所需参数license字段值并封装响应信息
-	license, err := generateLicenseAndResponse(params)
+	license, err := generateLicenseAndResponse(licenseData)
 	if err != nil {
 		common.RespondWithError(w, http.StatusInternalServerError, "Request parameter parsing error")
 		return
 	}
 
 	// 将生成的许可证写入到文件中
-	err = writeLicenseToFile(license)
+	_, err = writeLicenseToFile(licenseData)
 	if err != nil {
-		common.RespondWithError(w, http.StatusInternalServerError, "File write error")
+		log.Println("error writing license to file:", err)
 		return
 	}
 
@@ -83,15 +93,23 @@ func GetLicenseRequest(w http.ResponseWriter, r *http.Request) {
 
 /*
  * parseLicenseParams 从http请求的URL中解析并校验获取许可证所需要的参数
- * @params: queryParams url.Values - 包含http请求中查询参数的对象
- * @returns: *service.LicenseParams - 许可证参数结构体指针
+ * @params:  params map[string]string - 包含http请求中参数的map对象
+ * @returns: *dao.License - 许可证参数结构体指针
  * 			 error - 任何可能发生的错误
  */
-func parseLicenseParams(licenseData url.Values) (*dao.License, error) {
+func parseLicenseParams(params map[string]string, w http.ResponseWriter) (*dao.License, error) {
+
+	// 校验参数是否为空
+	for key, value := range params {
+		if value == "" {
+			common.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("missing required parameter: %s", key))
+			return nil, fmt.Errorf("missing required parameter: %s", key)
+		}
+	}
 
 	// 对获取的特征码进行格式检查
-	signature := licenseData.Get("signature")
-	matched, err := regexp.MatchString(`^.{1,32}$`, signature)
+	signatureParams := params["signature"]
+	matched, err := regexp.MatchString(`^.{1,32}$`, signatureParams)
 	if err != nil {
 		return nil, err
 	}
@@ -100,39 +118,34 @@ func parseLicenseParams(licenseData url.Values) (*dao.License, error) {
 	}
 
 	// 将获取的过期时间字符串转换为时间对象
-	expirationString := licenseData.Get("expiration")
-	expiration, err := time.Parse("2006-01-02", expirationString)
+	expirationStr := params["expiration"]
+	expirationParams, err := time.Parse("2006-01-02", expirationStr)
 	if err != nil {
+		common.RespondWithError(w, http.StatusBadRequest, "invalid expiration date")
 		return nil, err
 	}
 
-	// 判断 type 参数是否为空
-	typeParam := licenseData.Get("type")
-	if typeParam == "" {
-		return nil, fmt.Errorf("type parameter cannot be empty")
-	}
-	// 判断 type 参数是否为有效值
-	// 0 - 临时
-	// 1 - 永久
-	// TODO 由前端来返回值 后端不做具体值
-	if typeParam != "0" && typeParam != "1" {
-		return nil, fmt.Errorf("invalid license type: %s", typeParam)
+	typeParams := params["type"]
+	// 判断 type 参数是否为有效值 0 = 临时  1 = 永久
+	if typeParams != "0" && typeParams != "1" {
+		common.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("invalid license type: %s", typeParams))
+		return nil, fmt.Errorf("invalid license type: %s", typeParams)
 	}
 
 	return &dao.License{
-		Signature:  signature,
-		Object:     licenseData.Get("object"),
-		Type:       typeParam,
-		Expiration: expiration,
-		Project:    licenseData.Get("project"),
-		Module:     licenseData.Get("module"),
+		Signature:  signatureParams,
+		Object:     params["object"],
+		Type:       typeParams,
+		Expiration: expirationParams,
+		Project:    params["project"],
+		Module:     params["module"],
 	}, nil
 }
 
 /*
  * generateLicenseAndResponse 生成许可证并封装响应信息
- * @params: params *service.LicenseParams - 许可证参数结构体指针
- * @return: *ResponseData - 响应信息结构体指针
+ * @params: params *dao.License - 许可证参数结构体指针
+ * @return: *dao.License - 响应信息结构体指针
  *       	 error - 任何可能发生的错误
  */
 func generateLicenseAndResponse(params *dao.License) (*dao.License, error) {
@@ -144,12 +157,12 @@ func generateLicenseAndResponse(params *dao.License) (*dao.License, error) {
 	}
 
 	// 将许可证的日期和过期日期格式化为指定的格式
-	dateStr := license.CreatedAt.Format("2006-01-02 15:04:05")
+	dateStr := license.CreatedTime.Format("2006-01-02")
 	expirationStr := license.Expiration.Format("2006-01-02")
 
 	// 解析日期和过期日期
 	// TODO UTC时间转为所在时区时间
-	createDate, err := time.Parse("2006-01-02 15:04:05", dateStr)
+	createDate, err := time.Parse("2006-01-02", dateStr)
 	if err != nil {
 		return nil, err
 	}
@@ -161,16 +174,16 @@ func generateLicenseAndResponse(params *dao.License) (*dao.License, error) {
 
 	// 构建http返回的消息数据体
 	responseData := &dao.License{
-		ID:         license.ID,
-		Signature:  license.Signature,
-		License:    license.License,
-		Type:       license.Type,
-		Expiration: expiration,
-		Object:     license.Object,
-		Project:    license.Project,
-		Module:     license.Module,
-		CreatedAt:  createDate,
-		UpdatedAt:  createDate,
+		ID:          license.ID,
+		Signature:   license.Signature,
+		License:     license.License,
+		Type:        license.Type,
+		Expiration:  expiration,
+		Object:      license.Object,
+		Project:     license.Project,
+		Module:      license.Module,
+		CreatedTime: createDate,
+		UpdatedTime: createDate,
 	}
 
 	return responseData, nil
@@ -178,16 +191,16 @@ func generateLicenseAndResponse(params *dao.License) (*dao.License, error) {
 
 /*
  * writeLicenseToFile 将生成的许可证写入到文件中
- * @params: license *ResponseData - 响应信息结构体指针
+ * @params: license *dao.License - 响应信息结构体指针
  * @returns: error - 任何可能发生的错误
  */
-func writeLicenseToFile(licenseData *dao.License) error {
+func writeLicenseToFile(licenseData *dao.License) ([]byte, error) {
 
 	// 将许可证数据转化为JSON格式
 	// TODO 撤掉这层序列化
 	licenseJSON, err := json.Marshal(licenseData)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// 根据许可证ID创建文件名
@@ -195,7 +208,7 @@ func writeLicenseToFile(licenseData *dao.License) error {
 	file, err := os.Create(fileName)
 	if err != nil {
 		log.Println("error creating file:", err)
-		return err
+		return nil, err
 	}
 	defer func(file *os.File) {
 		err := file.Close()
@@ -207,17 +220,25 @@ func writeLicenseToFile(licenseData *dao.License) error {
 	// 对许可证数据进行混淆处理
 	encrypted, err := util.GarbleUtils(licenseJSON, licenseData.Signature)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// 将混淆后的许可证数据写入文件
 	_, err = file.WriteString(encrypted)
 	if err != nil {
 		log.Println("error writing to file:", err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	// 读取文件内容并返回
+	fileContent, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		log.Println("error reading file content:", err)
+		return nil, err
+	}
+
+	return fileContent, nil
+
 }
 
 /*

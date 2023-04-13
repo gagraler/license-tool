@@ -35,15 +35,15 @@ func GenerateLicenseService(params *dao.License) (*dao.License, error) {
 
 	// 构建license消息体
 	license := &dao.License{
-		ID:         util.GenerateUniqueID(),
-		License:    licenseStr,
-		Signature:  params.Signature,
-		Object:     params.Object,
-		Type:       params.Type,
-		Expiration: params.Expiration,
-		Project:    params.Project,
-		Module:     params.Module,
-		CreatedAt:  time.Now().UTC(),
+		ID:          util.GenerateUniqueID(),
+		License:     licenseStr,
+		Signature:   params.Signature,
+		Object:      params.Object,
+		Type:        params.Type,
+		Expiration:  params.Expiration,
+		Project:     params.Project,
+		Module:      params.Module,
+		CreatedTime: time.Now().UTC(),
 	}
 
 	// 保存到数据库
