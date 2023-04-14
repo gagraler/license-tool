@@ -11,11 +11,11 @@ import (
 )
 
 /*
- * GarbleUtils 是一个字节数组混淆工具函数，用于将输入的字节数组与签名代码进行异或运算并进行加密
+ * GarbleUtils 字节数组混淆工具函数，用于将输入的字节数组与签名代码进行异或运算并进行加密
  * @params: input []byte - 需要加密的字节数组
  * 			signature string - 签名代码
  * @returns: string - 加密后的字符串
- * 			 error - 如果签名代码为空，则返回一个错误
+ * 			 error - 如果签名代码为空，则返回错误
  */
 func GarbleUtils(input []byte, signature string) (string, error) {
 
