@@ -13,8 +13,7 @@ import (
 )
 
 /*
- * GenerateLicense 生成许可证token
- *
+ * GenerateLicenseService 生成许可证token
  * @params: params 请求参数结构体
  * @returns: License - 指向生成的license对象的指针
  * 			 error - 任何可能发生的错误
