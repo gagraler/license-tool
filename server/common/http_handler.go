@@ -14,8 +14,7 @@ import (
  * @return: null
  */
 func RespondWithError(w http.ResponseWriter, code int, message string) {
-	// 设置 HTTP 状态码
-	w.WriteHeader(code)
+
 	// 设置响应头部信息
 	w.Header().Set("Content-Type", "application/json")
 	// 构造响应体
@@ -29,6 +28,9 @@ func RespondWithError(w http.ResponseWriter, code int, message string) {
 	if err != nil {
 		return
 	}
+
+	// 设置 HTTP 状态码
+	w.WriteHeader(code)
 }
 
 // ResponseBody 响应消息结构体
@@ -47,8 +49,6 @@ type ResponseBody struct {
  */
 func RespondWithProper(w http.ResponseWriter, status int, data interface{}) {
 
-	w.WriteHeader(status)
-
 	w.Header().Set("Content-Type", "application/json")
 
 	resp := ResponseBody{
@@ -63,6 +63,8 @@ func RespondWithProper(w http.ResponseWriter, status int, data interface{}) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(status)
 
 	_, _ = w.Write(jsonResp)
 }
