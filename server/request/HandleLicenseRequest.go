@@ -46,13 +46,6 @@ func HandleLicenseRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 从http请求参数中解析出许可证所需参数
-	//err = r.ParseForm()
-	//if err != nil {
-	//	common.RespondWithError(w, http.StatusInternalServerError, "Failed to parse request parameters: "+err.Error())
-	//	return
-	//}
-
 	// 获取POST请求中的参数并存入map
 	for key, values := range r.Form {
 		if len(values) > 0 {
@@ -70,14 +63,14 @@ func HandleLicenseRequest(w http.ResponseWriter, r *http.Request) {
 	// 根据许可证所需参数license字段值并封装响应信息
 	license, err := generateLicenseAndResponse(licenseData)
 	if err != nil {
-		common.RespondWithError(w, http.StatusInternalServerError, "Request parameter parsing error")
+		common.RespondWithError(w, http.StatusInternalServerError, "Request parameter parsing error: "+err.Error())
 		return
 	}
 
 	// 将生成的许可证写入到文件中
-	_, err = writeLicenseToFile(licenseData)
+	_, err = writeLicenseToFile(license)
 	if err != nil {
-		log.Println("error writing license to file:", err)
+		log.Println("error writing license to file:", err.Error())
 		return
 	}
 
@@ -121,8 +114,8 @@ func parseLicenseParams(params map[string]string, w http.ResponseWriter) (*dao.L
 	expirationStr := params["expiration"]
 	expirationParams, err := time.Parse("2006-01-02", expirationStr)
 	if err != nil {
-		common.RespondWithError(w, http.StatusBadRequest, "invalid expiration date")
-		return nil, err
+		common.RespondWithError(w, http.StatusBadRequest, "invalid expiration date: "+err.Error())
+		return nil, fmt.Errorf("invalid expiration date")
 	}
 
 	typeParams := params["type"]
@@ -157,17 +150,17 @@ func generateLicenseAndResponse(params *dao.License) (*dao.License, error) {
 	}
 
 	// 将许可证的日期和过期日期格式化为指定的格式
-	dateStr := license.CreatedTime.Format("2006-01-02")
-	expirationStr := license.Expiration.Format("2006-01-02")
+	CreatedTimeStr := license.CreatedTime.Format("2006-01-02T15:04")
+	expirationStr := license.Expiration.Format("2006-01-02T15:04")
 
-	// 解析日期和过期日期
-	// TODO UTC时间转为所在时区时间
-	createDate, err := time.Parse("2006-01-02", dateStr)
+	// 解析生成日期和过期日期
+	// TODO 前端转换UTC时区
+	createdTime, err := time.Parse("2006-01-02T15:04", CreatedTimeStr)
 	if err != nil {
 		return nil, err
 	}
 
-	expiration, err := time.Parse("2006-01-02", expirationStr)
+	expiration, err := time.Parse("2006-01-02T15:04", expirationStr)
 	if err != nil {
 		return nil, err
 	}
@@ -182,8 +175,8 @@ func generateLicenseAndResponse(params *dao.License) (*dao.License, error) {
 		Object:      license.Object,
 		Project:     license.Project,
 		Module:      license.Module,
-		CreatedTime: createDate,
-		UpdatedTime: createDate,
+		CreatedTime: createdTime,
+		UpdatedTime: createdTime,
 	}
 
 	return responseData, nil
